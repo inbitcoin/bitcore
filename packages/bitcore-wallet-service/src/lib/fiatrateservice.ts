@@ -7,6 +7,7 @@ const $ = require('preconditions').singleton();
 const Common = require('./common');
 const Defaults = Common.Defaults;
 import logger from './logger';
+logger.level = process.env.LOG_LEVEL || 'info';
 
 const fiatCodes = {
   USD: 1,

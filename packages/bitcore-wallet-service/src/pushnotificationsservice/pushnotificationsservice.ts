@@ -4,6 +4,8 @@ import { PushNotificationsService } from '../lib/pushnotificationsservice';
 
 const config = require('../config');
 
+logger.level = process.env.LOG_LEVEL || 'info';
+
 const pushNotificationsService = new PushNotificationsService();
 pushNotificationsService.start(config, err => {
   if (err) throw err;

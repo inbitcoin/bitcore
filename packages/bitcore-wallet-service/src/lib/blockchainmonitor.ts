@@ -16,6 +16,7 @@ const Common = require('./common');
 const Constants = Common.Constants;
 const Utils = Common.Utils;
 const Defaults = Common.Defaults;
+logger.level = process.env.LOG_LEVEL || 'info';
 
 type throttledNewBlocksFnType = (that: any, coin: any, network: any, hash: any) => void;
 
@@ -149,7 +150,7 @@ export class BlockchainMonitor {
       this.lastTx[this.Nix++] = data.txid;
       if (this.Nix >= this.N) this.Nix = 0;
 
-      logger.debug(`\tChecking ${coin}/${network} txid: ${data.txid}`);
+      logger.debug(`Checking ${coin}/${network} txid: ${data.txid}`);
     }
 
     this.storage.fetchTxByHash(data.txid, (err, txp) => {

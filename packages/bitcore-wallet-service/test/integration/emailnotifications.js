@@ -15,7 +15,8 @@ var EmailService = require('../../ts_build/lib/emailservice');
 var TestData = require('../testdata');
 var helpers = require('./helpers');
 
-describe('Email notifications', function() {
+// actually unuseful
+describe.skip('Email notifications', function() {
   this.timeout(5000);
   var storage, server, wallet, mailerStub, emailService;
 

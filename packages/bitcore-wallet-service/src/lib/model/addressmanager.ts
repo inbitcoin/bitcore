@@ -133,4 +133,16 @@ export class AddressManager {
     const isChange = changeIndex > 0;
     return { _input, addressIndex, isChange };
   }
+
+  getCustomAddressPath(change, addressIndex) {
+    return (
+      'm/' +
+      (this.derivationStrategy == Constants.DERIVATION_STRATEGIES.BIP45
+        ? this.copayerIndex + '/'
+        : '') +
+      change +
+      '/' +
+      addressIndex
+    );
+  }
 }

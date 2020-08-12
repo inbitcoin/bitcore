@@ -8,6 +8,8 @@ import { TxProposalAction } from './txproposalaction';
 const $ = require('preconditions').singleton();
 const Uuid = require('uuid');
 
+logger.level = process.env.LOG_LEVEL || 'info';
+
 const Common = require('../common');
 const Constants = Common.Constants,
   Defaults = Common.Defaults,

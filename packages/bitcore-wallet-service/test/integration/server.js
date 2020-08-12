@@ -488,6 +488,77 @@ describe('Wallet service', function() {
       });
     });
 
+    it('should fail to create wallet that exceeds createWalletLimit', function(done) {
+      var opts = {
+        name: 'my wallet',
+        m: 2,
+        n: 3,
+        pubKey: TestData.keyPair.pub,
+      };
+
+      // limit wallet creation to 1
+      server.createWalletLimit = 1;
+      // create first wallet
+      server.createWallet(opts, function(err, walletId) {
+        should.not.exist(err);
+        // create second wallet
+        server.createWallet(opts, function(err, walletId) {
+          should.exist(err);
+          err.message.should.contain('Too many wallets registered');
+          err.code.should.contain('TOO_MANY_WALLETS');
+          done()
+        });
+      });
+    });
+
+    it('should create 2 wallet on createWalletLimit 2', function(done) {
+      var opts = {
+        name: 'my wallet',
+        m: 2,
+        n: 3,
+        pubKey: TestData.keyPair.pub,
+      };
+
+      // limit wallet creation to 2
+      server.createWalletLimit = 2;
+      // create first wallet
+      server.createWallet(opts, function(err, walletId) {
+        should.not.exist(err);
+        // create second wallet
+        server.createWallet(opts, function(err, walletId) {
+          should.not.exist(err);
+          server.storage.fetchWallet(walletId, function(err, wallet) {
+            should.not.exist(err);
+            wallet.id.should.equal(walletId);
+            done();
+          });
+        });
+      });
+    });
+
+    it('should create 2 wallet with createWalletLimit 0 (on initialize)', function(done) {
+      var opts = {
+        name: 'my wallet',
+        m: 2,
+        n: 3,
+        pubKey: TestData.keyPair.pub,
+      };
+
+      // create first wallet
+      server.createWallet(opts, function(err, walletId) {
+        should.not.exist(err);
+        // create second wallet
+        server.createWallet(opts, function(err, walletId) {
+          should.not.exist(err);
+          server.storage.fetchWallet(walletId, function(err, wallet) {
+            should.not.exist(err);
+            wallet.id.should.equal(walletId);
+            done();
+          });
+        });
+      });
+    });
+
     it('should create wallet with given id', function(done) {
       var opts = {
         name: 'my wallet',
@@ -2216,7 +2287,7 @@ describe('Wallet service', function() {
       });
     });
 
-    describe('ETH', function() {
+    describe.skip('ETH', function() {
       var server, wallet;
 
       describe('BIP44 livenet', function() {
@@ -2326,7 +2397,7 @@ describe('Wallet service', function() {
       });
     });
 
-    describe('XRP', function() {
+    describe.skip('XRP', function() {
       var server, wallet;
 
       describe('BIP44 livenet', function() {
@@ -2844,7 +2915,7 @@ describe('Wallet service', function() {
           feePerKb: 100e2,
         };
         helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(txp) {
-          blockchainExplorer.getUtxos = function(addresses, height, cb) {
+          blockchainExplorer.getUtxos = function(addresses, height, xpub, cb) {
             return cb(null, []);
           };
 
@@ -3104,7 +3175,7 @@ describe('Wallet service', function() {
       });
     });
     it('should get balance when there are no funds', function(done) {
-      blockchainExplorer.getUtxos = sinon.stub().callsArgWith(2, null, []);
+      blockchainExplorer.getUtxos = sinon.stub().callsArgWith(3, null, []);
       server.createAddress({}, function(err, address) {
         should.not.exist(err);
         server.getBalance({}, function(err, balance) {
@@ -3134,7 +3205,7 @@ describe('Wallet service', function() {
       });
     });
     it('should fail gracefully when blockchain is unreachable', function(done) {
-      blockchainExplorer.getUtxos = sinon.stub().callsArgWith(2, 'dummy error');
+      blockchainExplorer.getUtxos = sinon.stub().callsArgWith(3, 'dummy error');
       server.createAddress({}, function(err, address) {
         should.not.exist(err);
         server.getBalance({}, function(err, balance) {
@@ -3630,7 +3701,7 @@ describe('Wallet service', function() {
     });
 
 
-    it('should not use cache on different opts', function(done) {
+    it('should not use cache', function(done) {
       helpers.stubFeeLevels({
         1: 40000,
         2: 20000,
@@ -3638,14 +3709,21 @@ describe('Wallet service', function() {
       server.getFeeLevels({}, function(err, fees, fromCache) {
         should.not.exist(err);
         should.not.exist(fromCache);
-        server.getFeeLevels({ coin: 'bch' }, function(err, fees, fromCache) {
-          should.not.exist(err);
-          should.not.exist(fromCache);
-          server.getFeeLevels({ coin: 'bch', network: 'testnet' }, function(err, fees, fromCache) {
-            should.not.exist(err);
-            should.not.exist(fromCache);
-            done();
-          });
+        done();
+      });
+    });
+
+    it('should return error on unconfigured network', function(done) {
+      helpers.stubFeeLevels({
+        1: 40000,
+      });
+      server.getFeeLevels({coin: 'bch'}, function(err, fees, fromCache) {
+        should.exist(err);
+        err.message.should.equal('Invalid network')
+        server.getFeeLevels({network: 'testnet'}, function(err, fees, fromCache) {
+          should.exist(err);
+          err.message.should.equal('Invalid network')
+          done()
         });
       });
     });
@@ -3730,34 +3808,6 @@ describe('Wallet service', function() {
       addr: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
       lockedFunds: 0,
       flags: {},
-    },
-    {
-      coin: 'bch',
-      key: 'id44bch',
-      addr: 'qpgjyj728rhu4gca2dqfzlpl8acnhzequshhgvev53',
-      lockedFunds: 0,
-      flags: {},
-    },
-    {
-      coin: 'bch',
-      key: 'id44bch',
-      addr: 'CPrtPWbp8cCftTQu5fzuLG5zPJNDHMMf8X',
-      lockedFunds: 0,
-      flags: { noCashAddr: true },
-    },
-    {
-      coin: 'eth',
-      key: 'id44btc',
-      addr: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A',
-      lockedFunds: 0,
-      flags: { noChange: true, noUtxoTests: true, },
-    }, 
-    {
-      coin: 'xrp',
-      key: 'id44btc',
-      addr: 'rDzTZxa7NwD9vmNf5dvTbW4FQDNSRsfPv6',
-      lockedFunds: Defaults.MIN_XRP_BALANCE,
-      flags: { noChange: true , noUtxoTests: true},
     }
   ];
 
@@ -4618,7 +4668,7 @@ describe('Wallet service', function() {
           });
         });
         it('should fail gracefully if unable to reach the blockchain', function(done) {
-          blockchainExplorer.getUtxos = sinon.stub().callsArgWith(2, 'dummy error');
+          blockchainExplorer.getUtxos = sinon.stub().callsArgWith(3, 'dummy error');
           blockchainExplorer.getBalance = sinon.stub().callsArgWith(1, 'dummy error');
           server.createAddress({}, function(err, address) {
             should.not.exist(err);
@@ -6162,18 +6212,52 @@ describe('Wallet service', function() {
         server._normalizeTxHistory = function(a, b, c, e, d) { return d(null, b); }
         var txs = [{
           txid: '123',
-          blockheight: 100,
+          blockHash: "123",
+          blockHeight: 100,
+          blockTime: 1585843242,
+          confirmations: 10,
           height: 100,
-          fees: 100,
+          value: "99757",
+          valueIn: "100000",
+          fees: "100",
           time: 20,
-          inputs: [{
-            address: 'external',
-            amount: 500,
-          }],
-          outputs: [{
-            address: mainAddresses[0].address,
-            amount: 200,
-          }],
+          vin: [
+            {
+              "txid": "8f94f82dd54997d4c9d107577edc023178110abf1c4249ce8caee656ae05533c",
+              "sequence": 4294967295,
+              "n": 0,
+              "vin": [
+                {
+                  "txid": "8f94f82dd54997d4c9d107577edc023178110abf1c4249ce8caee656ae05533c",
+                  "sequence": 4294967295,
+                  "n": 0,
+                  "addresses": [
+                    "mh7qXzsy8TAfTNLVgjKP82NyZyiqjoeXMM"
+                  ],
+                  "isAddress": true,
+                  "value": "100000",
+                  "hex": "483045022100e22b4fb83be08d2fddad8a9a4125cbeb21f3fafed85b9d88b933c9d9b25c7ec3022008152a23cd9ad54e55a6e0f979024e825167054f7ae060b6582f29d637a7114a012102de15096c21a30331dd905ea39105d29315d10ad5c00ee9cbacadfae026561948"
+                }
+              ], "addresses": [
+                "mh7qXzsy8TAfTNLVgjKP82NyZyiqjoeXMM"
+              ],
+              "isAddress": true,
+              "value": "5000",
+              "hex": "483045022100e22b4fb83be08d2fddad8a9a4125cbeb21f3fafed85b9d88b933c9d9b25c7ec3022008152a23cd9ad54e55a6e0f979024e825167054f7ae060b6582f29d637a7114a012102de15096c21a30331dd905ea39105d29315d10ad5c00ee9cbacadfae026561948"
+            }
+          ],
+          vout: [
+            {
+              "value": "2000",
+              "n": 0,
+              "spent": true,
+              "hex": "76a914ee3fbb8a39b4a85c40eea9fa287e3a017307451788ac",
+              "addresses": [
+                mainAddresses[0].address
+              ],
+              "isAddress": true
+            }
+          ],
         }];
         helpers.stubHistory(null, null, txs);
         helpers.stubFeeLevels({
@@ -6358,7 +6442,7 @@ describe('Wallet service', function() {
           should.not.exist(err);
           server.storage.fetchAddresses(wallet.id, function(err, addresses) {
             should.not.exist(err);
-            addresses.length.should.equal(1);
+            addresses.length.should.equal(3);
             done();
           });
         });
@@ -7236,6 +7320,35 @@ describe('Wallet service', function() {
         should.not.exist(err);
         should.exist(txid);
         done();
+      });
+    });
+    const emptyRawTxError = "Error: Error during broadcast, empty 'raw' tx";
+    it('should fail to broadcast on empty raw tx', function(done) {
+      server.broadcastRawTx({
+        network: 'testnet',
+        rawTx: '',
+      }, function(err, txid) {
+        should.exist(err);
+        err.toString().should.equals(emptyRawTxError);
+        server.broadcastRawTx({
+          network: 'testnet',
+          rawTx: null
+        }, function(err, txid) {
+          should.exist(err);
+          err.toString().should.equals(emptyRawTxError);
+          done();
+        });
+      });
+    });
+    it('should fail to _broadcastRawTx on empty raw tx', function(done) {
+      server._broadcastRawTx('btc', 'testnet', '', function(err, txid) {
+        should.exist(err);
+        err.toString().should.equals(emptyRawTxError);
+        server._broadcastRawTx('btc', 'testnet', null, function(err, txid) {
+          should.exist(err);
+          err.toString().should.equals(emptyRawTxError);
+          done();
+        });
       });
     });
     it('should fail to brodcast a tx already marked as broadcasted', function(done) {
@@ -9071,7 +9184,8 @@ describe('Wallet service', function() {
     });
   });
 
-  describe('Sync wallet', function() {
+  // deprecated with blockbook
+  describe.skip('Sync wallet', function() {
     var server, wallet;
     beforeEach(function(done) {
 

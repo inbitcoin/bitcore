@@ -5,6 +5,8 @@ import { Address } from './address';
 import { AddressManager } from './addressmanager';
 import { Copayer } from './copayer';
 
+logger.level = process.env.LOG_LEVEL || 'info';
+
 const $ = require('preconditions').singleton();
 const Uuid = require('uuid');
 const config = require('../../config');
@@ -249,6 +251,10 @@ export class Wallet {
 
   isScanning() {
     return this.scanning;
+  }
+
+  createCustomPath(change, addressIndex) {
+    return this.addressManager.getCustomAddressPath(change, addressIndex);
   }
 
   createAddress(isChange, step) {

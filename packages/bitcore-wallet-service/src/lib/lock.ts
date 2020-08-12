@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import logger from './logger';
 import { Storage } from './storage';
 
 const $ = require('preconditions').singleton();
@@ -6,6 +7,8 @@ const Common = require('./common');
 const Defaults = Common.Defaults;
 const Errors = require('./errors/errordefinitions');
 const ACQUIRE_RETRY_STEP = 50; // ms
+
+logger.level = process.env.LOG_LEVEL || 'info';
 
 export class Lock {
   storage: Storage;

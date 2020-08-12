@@ -3,6 +3,7 @@ import * as request from 'request-promise-native';
 import * as secp256k1 from 'secp256k1';
 import { URL } from 'url';
 import logger from '../../logger';
+logger.level = process.env.LOG_LEVEL || 'info';
 
 const bitcoreLib = require('bitcore-lib');
 
@@ -34,6 +35,7 @@ export class Client {
     const { baseUrl = this.baseUrl } = payload;
     const url = `${baseUrl}/wallet`;
     const signature = this.sign({ method: 'POST', url, payload });
+    logger.debug(`register ${url}`);
     return request.post(url, {
       headers: { 'x-signature': signature },
       body: payload,
@@ -55,6 +57,7 @@ export class Client {
     }
 
     const url = apiUrl + query;
+    logger.debug(`getBalance ${url}`);
     const signature = this.sign({ method: 'GET', url, payload });
     return request.get(url, {
       headers: { 'x-signature': signature },
@@ -66,7 +69,7 @@ export class Client {
   async getCheckData(params) {
     const { payload, pubKey } = params;
     const url = `${this.baseUrl}/wallet/${pubKey}/check`;
-    logger.debug('WALLET CHECK');
+    logger.debug(`getCheckData ${url}`);
     const signature = this.sign({ method: 'GET', url, payload });
     return request.get(url, {
       headers: { 'x-signature': signature },
@@ -76,9 +79,10 @@ export class Client {
   }
 
   async getAddressTxos(params) {
-    const { unspent, address } = params;
-    const args = unspent ? `?unspent=${unspent}` : '';
-    const url = `${this.baseUrl}/address/${address}${args}`;
+    const { confirmed, address } = params;
+    const args = confirmed ? `?confirmed=${confirmed}` : '';
+    const url = `${this.baseUrl}/v2/utxo/${address}${args}`;
+    logger.debug(`getAddressTxos ${url}`);
     return request.get(url, {
       json: true
     });
@@ -86,25 +90,19 @@ export class Client {
 
   async getTx(params) {
     const { txid } = params;
-    const url = `${this.baseUrl}/tx/${txid}`;
+    const url = `${this.baseUrl}/v2/tx/${txid}`;
+    logger.debug(`getTx ${url}`);
     return request.get(url, {
       json: true
     });
   }
 
   async getCoins(params) {
-    const { payload, pubKey, includeSpent } = params;
+    const { xPubKey } = params;
 
-    var extra = '';
-    if (includeSpent) {
-      extra = `?includeSpent=${includeSpent}`;
-    }
-    const url = `${this.baseUrl}/wallet/${pubKey}/utxos${extra}`;
-    logger.debug('GET UTXOS:', url);
-    const signature = this.sign({ method: 'GET', url, payload });
+    const url = `${this.baseUrl}/v2/utxo/${xPubKey}`;
+    logger.debug(`getCoins ${url}`);
     return request.get(url, {
-      headers: { 'x-signature': signature },
-      body: payload,
       json: true
     });
   }
@@ -112,44 +110,37 @@ export class Client {
   async getCoinsForTx(params) {
     const { txId } = params;
     const url = `${this.baseUrl}/tx/${txId}/coins`;
-    logger.debug('GET COINS FOR TX:', url);
+    logger.debug(`getCoinsForTx ${url}`);
     return request.get(url, {
       json: true
     });
   }
 
-  listTransactions(params) {
+  async listTransactions(params) {
     const {
-      pubKey,
+      xPubKey,
       startBlock,
-      startDate,
       endBlock,
-      endDate,
-      includeMempool,
+      maxGap,
       tokenAddress,
       multisigContractAddress
     } = params;
-    let query = '';
-    let apiUrl = `${this.baseUrl}/wallet/${pubKey}/transactions?`;
+    let url = `${this.baseUrl}/v2/xpub/${xPubKey}?details=txs`;
+    // FIXME: temporary disabled, see issue #64
+    /*
     if (startBlock) {
-      query += `startBlock=${startBlock}&`;
+      url += `&from=${startBlock}`;
     }
     if (endBlock) {
-      query += `endBlock=${endBlock}&`;
+      url += `&to=${endBlock}`;
     }
-    if (tokenAddress) {
-      query += `tokenAddress=${tokenAddress}&`;
+    */
+    if (maxGap) {
+      url += `&gap=${maxGap}`;
     }
-    if (multisigContractAddress) {
-      apiUrl = `${this.baseUrl}/ethmultisig/transactions/${multisigContractAddress}?`;
-    }
-    if (includeMempool) {
-      query += 'includeMempool=true';
-    }
-    const url = apiUrl + query;
     const signature = this.sign({ method: 'GET', url });
-    logger.debug('List transactions', url);
-    return requestStream.get(url, {
+    logger.debug(`List transactions ${url}`);
+    return request.get(url, {
       headers: { 'x-signature': signature },
       json: true
     });
@@ -159,7 +150,7 @@ export class Client {
     const { payload, pubKey } = params;
     const url = `${this.baseUrl}/wallet/${pubKey}`;
 
-    logger.debug('addAddresses:', url, payload);
+    logger.debug(`addAddresses: ${url} ${payload}`);
     const signature = this.sign({ method: 'POST', url, payload });
     const h = { 'x-signature': signature };
     return request.post(url, {
@@ -171,8 +162,42 @@ export class Client {
 
   async broadcast(params) {
     const { payload } = params;
-    const url = `${this.baseUrl}/tx/send`;
-    logger.debug('Broadcast', url);
-    return request.post(url, { body: payload, json: true });
+    const url = `${this.baseUrl}/v2/sendtx/${payload.rawTx}`;
+    logger.debug(`broadcast ${url}`);
+    return request.get(url, { json: true });
+  }
+
+  async getBlockHash(params) {
+    const { blockId } = params;
+    const url = `${this.baseUrl}/v2/block-index/${blockId}`;
+    logger.debug(`getBlockHash  ${url}`);
+    return request.get(url, {
+      json: true
+    });
+  }
+
+  async getBlockLight(params) {
+    const { blockId } = params;
+    const url = `${this.baseUrl}/block/${blockId}`;
+    logger.debug(`getBlockLight  ${url}`);
+    return request.get(url, {
+      json: true
+    });
+  }
+
+  async getConnectionCount() {
+    const url = `${this.baseUrl}/info/getconnectioncount`;
+    logger.debug(`getConnectionCount ${url}`);
+    return request.get(url, {
+      json: true
+    });
+  }
+
+  async getPeerInfo() {
+    const url = `${this.baseUrl}/info/getpeerinfo`;
+    logger.debug(`getPeerInfo ${url}`);
+    return request.get(url, {
+      json: true
+    });
   }
 }

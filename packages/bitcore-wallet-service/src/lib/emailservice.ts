@@ -24,6 +24,8 @@ const path = require('path');
 const Utils = require('./common/utils');
 const Defaults = require('./common/defaults');
 
+logger.level = process.env.LOG_LEVEL || 'info';
+
 const EMAIL_TYPES = {
   NewCopayer: {
     filename: 'new_copayer',

@@ -1,27 +1,18 @@
 import _ from 'lodash';
+import logger from '../lib/logger';
 import { V8 } from './blockchainexplorers/v8';
 import { ChainService } from './chain/index';
 
 const $ = require('preconditions').singleton();
 const Common = require('./common');
 const Defaults = Common.Defaults;
+logger.level = process.env.LOG_LEVEL || 'info';
+
 const PROVIDERS = {
   v8: {
     btc: {
-      livenet: 'https://api.bitpay.com',
-      testnet: 'https://api.bitpay.com'
-    },
-    bch: {
-      livenet: 'https://api.bitpay.com',
-      testnet: 'https://api.bitpay.com'
-    },
-    eth: {
-      livenet: 'https://api-eth.bitcore.io',
-      testnet: 'https://api-eth.bitcore.io'
-    },
-    xrp: {
-      livenet: 'https://api-xrp.bitcore.io',
-      testnet: 'https://api-xrp.bitcore.io'
+      livenet: 'https://blockbook.inbitcoin.it',
+      testnet: 'https://testnet.blockbook.inbitcoin.it'
     }
   }
 };

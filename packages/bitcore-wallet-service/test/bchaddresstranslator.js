@@ -6,7 +6,8 @@ var sinon = require('sinon');
 var should = chai.should();
 var t = require('../ts_build/lib/bchaddresstranslator');
 
-describe('BCH Address translator', function() {
+// NO BCH
+describe.skip('BCH Address translator', function() {
 
   describe('#getAddressCoin', function() {
     it('should identify btc as coin for 1LqBGSKuX5yYUonjxT5qGfpUsXKYYWeabA', function() {

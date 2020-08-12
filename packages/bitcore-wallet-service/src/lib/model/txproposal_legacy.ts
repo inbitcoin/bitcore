@@ -2,10 +2,13 @@ import _ from 'lodash';
 import logger from '../logger';
 
 const $ = require('preconditions').singleton();
+
 const Common = require('../common');
 const Constants = Common.Constants;
 const Defaults = Common.Defaults;
 import { TxProposalAction } from './txproposalaction';
+
+logger.level = process.env.LOG_LEVEL || 'info';
 
 function throwUnsupportedError() {
   const msg = 'Unsupported operation on this transaction proposal';

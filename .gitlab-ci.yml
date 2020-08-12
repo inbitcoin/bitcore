@@ -1,0 +1,106 @@
+stages:
+  - tslint
+  - test
+
+default:
+  image: node:12.18.3-buster
+  before_script:
+    - node --version
+    - npm --version
+    - whoami
+    - npm install --production
+    - node_modules/.bin/lerna bootstrap --no-ci
+    - npm run compile
+    - cd packages/bitcore-wallet-service
+
+cache:
+  paths:
+    - node_modules
+
+tslint:
+  stage: tslint
+  only:
+    refs:
+      - develop
+      - merge_request
+  script:
+    - npm run lint:ts
+
+test:
+  stage: test
+  services:
+    - mongo:4.2-bionic
+  variables:
+    DB_HOST: mongo
+  only:
+    refs:
+      - develop
+      - merge_request
+  script:
+    - npm run compile
+    - npm run test
+
+e2e_test:
+  stage: test
+  image: debian:buster-slim
+  services:
+    - docker:stable-dind
+  rules:
+    - if: '$CI_PIPELINE_SOURCE != "merge_request_event"'
+      when: manual
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: always
+  cache:
+    key: pipcache
+    paths:
+      - pipcache
+  artifacts:
+    paths:
+      - tests/integration/reports
+      - tests/integration/wallets
+    when: always
+    expire_in: 2 weeks
+  variables:
+    PIP_CACHE_DIR: ../pipcache
+    USER: ci
+    BISK_REF: 1.2.0
+    BISK_NETWORK: ccbisk_default
+    BISK_HOST: docker
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+    DOCKER_BUILDKIT: 1
+    INBITCOIN_NS: ${DOC_REG}/inbitcoin
+    BWS_IMG_NAME: ${INBITCOIN_NS}/bitcore
+    BWS_TEST_VER: under_test
+    TEST_IMAGE: inbitcoin/bitcore-tests:0.1.0
+    TEST_IMAGE_REG: ${DOC_REG}/${TEST_IMAGE}
+  before_script:
+    - apt-get update
+    - apt-get install -y apt-transport-https ca-certificates curl git
+        gnupg-agent jq make python3-dev software-properties-common virtualenv
+    - curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add -
+    - add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable"
+    - apt-get update
+    - apt-get install -y docker-ce docker-ce-cli containerd.io
+    - adduser --shell /bin/bash --disabled-password --gecos "${USER} user" ${USER}
+    - adduser ${USER} docker
+    - su ${USER} -c "docker login ${DOC_REG} -u ${DOC_USR} -p ${DOC_PWD}"
+    - export BWS_LATEST_VER=$(awk '/^VERSION/ {print $NF}' docker/Makefile)
+    - export BWS_LATEST_RELEASE="${BWS_IMG_NAME}:${BWS_LATEST_VER}"
+    - su ${USER} -c "docker pull ${BWS_LATEST_RELEASE} || true"
+    - su ${USER} -c "docker build -f docker/Dockerfile -t ${BWS_IMG_NAME}:${BWS_TEST_VER} --cache-from ${BWS_LATEST_RELEASE} --progress=plain ."
+    - mkdir -pm 700 ~/.ssh
+    - echo "${BISK_DEPLOY_KEY}" > ~/.ssh/id_rsa && chmod 600 ~/.ssh/id_rsa
+    - echo -e "Host gitlab.inbitcoin.it\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+    - git clone ssh://git@gitlab.inbitcoin.it:2222/docker/bisk.git
+    - cd bisk && git checkout ${BISK_REF}
+    - su ${USER} -c "./unix_make.sh install_cli ${PIP_CACHE_DIR}"
+    - su ${USER} -c "docker pull ${INBITCOIN_NS}/bisk:${BISK_REF} || true"
+    - su ${USER} -c "BWS_VERSION=${BWS_TEST_VER} ./unix_make.sh colored_coins --stack=BWS_CI --pip-cache-dir=${PIP_CACHE_DIR}"
+    - cd ../tests
+    - chown -R ${USER}:${USER} ./
+    - su ${USER} -c "docker pull ${TEST_IMAGE_REG} || true"
+    - su ${USER} -c "docker build -t ${TEST_IMAGE} --build-arg BISK_DEPLOY_KEY=\"${BISK_DEPLOY_KEY}\" --build-arg BISK_REF=${BISK_REF} --cache-from ${TEST_IMAGE_REG} --progress=plain ."
+    - cd integration
+  script:
+    - su ${USER} -c "./start_tests.sh"

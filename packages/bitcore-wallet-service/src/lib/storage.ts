@@ -19,6 +19,7 @@ import {
 
 const BCHAddressTranslator = require('./bchaddresstranslator'); // only for migration
 const $ = require('preconditions').singleton();
+logger.level = process.env.LOG_LEVEL || 'info';
 
 const collections = {
   // Duplciated in helpers.. TODO
@@ -216,6 +217,22 @@ export class Storage {
     );
   }
 
+  canStoreWallet(limit, cb: (err?: any, res?: boolean) => void) {
+    if (!this.db) return cb('not ready');
+
+    this.db.collection(collections.WALLETS).find(
+      {
+      },
+      {
+        limit
+      }).toArray((err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb(null, true);
+        return cb(null, result.length >= limit ? false : true);
+      }
+    );
+  }
+
   storeWallet(wallet, cb) {
     this.db.collection(collections.WALLETS).replaceOne(
       {
@@ -321,6 +338,26 @@ export class Storage {
         if (err) return cb(err);
         if (!result) return cb();
         return this._completeTxData(walletId, TxProposal.fromObj(result), cb);
+      }
+    );
+  }
+
+  fetchTxByProposalId(txProposalId, cb) {
+    if (!this.db) return cb();
+
+    this.db.collection(collections.TXS).findOne(
+      {
+        id: txProposalId
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+        let txProposal = TxProposal.fromObj(result);
+        return this._completeTxData(
+          txProposal.walletId,
+          txProposal,
+          cb
+        );
       }
     );
   }
@@ -1558,7 +1595,7 @@ export class Storage {
         resolve({ lastAddress, sum });
       });
     });
-  };
+  }
 
   acquireLock(key, expireTs, cb) {
     this.db.collection(collections.LOCKS).insertOne(

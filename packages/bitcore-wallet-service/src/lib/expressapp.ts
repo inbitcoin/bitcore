@@ -16,6 +16,12 @@ const Common = require('./common');
 const rp = require('request-promise-native');
 const Defaults = Common.Defaults;
 
+const Bitcore = require('bitcore-lib');
+
+const Errors = require('./errors/errordefinitions');
+
+logger.level = process.env.LOG_LEVEL || 'verbose';
+
 export class ExpressApp {
   app: express.Express;
 
@@ -49,7 +55,6 @@ export class ExpressApp {
     const allowCORS = (req, res, next) => {
       if ('OPTIONS' == req.method) {
         res.sendStatus(200);
-        res.end();
         return;
       }
       next();
@@ -88,21 +93,6 @@ export class ExpressApp {
       transport.level = 'error';
     } else {
       this.app.use(LogMiddleware());
-      // morgan.token('walletId', function getId(req) {
-      // return req.walletId ? '<' + req.walletId + '>' : '<>';
-      // });
-
-      // const logFormat =
-      // ':walletId :remote-addr :date[iso] ":method :url" :status :res[content-length] :response-time ":user-agent"  ';
-      // const logOpts = {
-      // skip(req, res) {
-      // if (res.statusCode != 200) return false;
-      // return req.path.indexOf('/notifications/') >= 0;
-      // },
-      // stream: logger.stream
-      // };
-
-      // this.app.use(morgan(logFormat, logOpts));
     }
 
     const router = express.Router();
@@ -245,6 +235,8 @@ export class ExpressApp {
 
     // retrieve latest version of copay
     router.get('/latest-version', async (req, res) => {
+      const err = Errors.API_NOT_SUPPORTED;
+      return returnError(err, res, req);
       try {
         res.setHeader('User-Agent', 'copay');
         var options = {
@@ -291,6 +283,8 @@ export class ExpressApp {
 
     // DEPRECATED
     router.post('/v1/wallets/', createWalletLimiter, (req, res) => {
+      const err = Errors.API_NOT_SUPPORTED;
+      return returnError(err, res, req);
       logDeprecated(req);
       return returnError(new ClientError('BIP45 wallet creation no longer supported'), res, req);
     });
@@ -326,6 +320,8 @@ export class ExpressApp {
 
     // DEPRECATED
     router.post('/v1/wallets/:id/copayers/', (req, res) => {
+      const err = Errors.API_NOT_SUPPORTED;
+      return returnError(err, res, req);
       logDeprecated(req);
       return returnError(new ClientError('BIP45 wallet creation no longer supported'), res, req);
     });
@@ -347,6 +343,8 @@ export class ExpressApp {
 
     // DEPRECATED
     router.get('/v1/wallets/', (req, res) => {
+      const err = Errors.API_NOT_SUPPORTED;
+      return returnError(err, res, req);
       logDeprecated(req);
       getServerWithAuth(req, res, server => {
         server.getStatus(
@@ -363,6 +361,8 @@ export class ExpressApp {
 
     // DEPRECATED
     router.get('/v2/wallets/', (req, res) => {
+      const err = Errors.API_NOT_SUPPORTED;
+      return returnError(err, res, req);
       getServerWithAuth(req, res, server => {
         const opts = { includeExtendedInfo: false, twoStep: false };
         if (req.query.includeExtendedInfo == '1') opts.includeExtendedInfo = true;
@@ -396,6 +396,8 @@ export class ExpressApp {
     });
 
     router.get('/v1/wallets/:identifier/', (req, res) => {
+      const err = Errors.API_NOT_SUPPORTED;
+      return returnError(err, res, req);
       getServerWithAuth(
         req,
         res,
@@ -424,6 +426,8 @@ export class ExpressApp {
     });
 
     router.get('/v1/preferences/', (req, res) => {
+      const err = Errors.API_NOT_SUPPORTED;
+      return returnError(err, res, req);
       getServerWithAuth(req, res, server => {
         server.getPreferences({}, (err, preferences) => {
           if (err) return returnError(err, res, req);
@@ -433,6 +437,8 @@ export class ExpressApp {
     });
 
     router.put('/v1/preferences', (req, res) => {
+      const err = Errors.API_NOT_SUPPORTED;
+      return returnError(err, res, req);
       getServerWithAuth(req, res, server => {
         server.savePreferences(req.body, (err, result) => {
           if (err) return returnError(err, res, req);
@@ -443,6 +449,8 @@ export class ExpressApp {
 
     // DEPRECATED (do not use cashaddr)
     router.get('/v1/txproposals/', (req, res) => {
+      const err = Errors.API_NOT_SUPPORTED;
+      return returnError(err, res, req);
       getServerWithAuth(req, res, server => {
         server.getPendingTxs({ noCashAddr: true }, (err, pendings) => {
           if (err) return returnError(err, res, req);
@@ -462,13 +470,17 @@ export class ExpressApp {
 
     // DEPRECATED
     router.post('/v1/txproposals/', (req, res) => {
-      const Errors = require('./errors/errordefinitions');
-      const err = Errors.UPGRADE_NEEDED;
+      const err = Errors.API_NOT_SUPPORTED;
       return returnError(err, res, req);
+      // const Errors = require('./errors/errordefinitions');
+      // const err = Errors.UPGRADE_NEEDED;
+      // return returnError(err, res, req);
     });
 
     // DEPRECATED, no cash addr
     router.post('/v2/txproposals/', (req, res) => {
+      const err = Errors.API_NOT_SUPPORTED;
+      return returnError(err, res, req);
       getServerWithAuth(req, res, server => {
         req.body.noCashAddr = true;
         req.body.txpVersion = 3;
@@ -642,6 +654,8 @@ export class ExpressApp {
 
     // DEPRECATED
     router.post('/v1/addresses/', (req, res) => {
+      const err = Errors.API_NOT_SUPPORTED;
+      return returnError(err, res, req);
       logDeprecated(req);
       getServerWithAuth(req, res, server => {
         server.createAddress(
@@ -658,6 +672,8 @@ export class ExpressApp {
 
     // DEPRECATED
     router.post('/v2/addresses/', (req, res) => {
+      const err = Errors.API_NOT_SUPPORTED;
+      return returnError(err, res, req);
       logDeprecated(req);
       getServerWithAuth(req, res, server => {
         server.createAddress(
@@ -674,6 +690,8 @@ export class ExpressApp {
 
     // DEPRECATED (no cashaddr by default)
     router.post('/v3/addresses/', (req, res) => {
+      const err = Errors.API_NOT_SUPPORTED;
+      return returnError(err, res, req);
       getServerWithAuth(req, res, server => {
         let opts = req.body;
         opts = opts || {};
@@ -740,6 +758,8 @@ export class ExpressApp {
 
     // DEPRECATED
     router.get('/v1/feelevels/', estimateFeeLimiter, (req, res) => {
+      const err = Errors.API_NOT_SUPPORTED;
+      return returnError(err, res, req);
       logDeprecated(req);
       const opts: { network?: string } = {};
       if (req.query.network) opts.network = req.query.network;
@@ -777,6 +797,8 @@ export class ExpressApp {
     });
 
     router.post('/v3/estimateGas/', (req, res) => {
+      const err = Errors.API_NOT_SUPPORTED;
+      return returnError(err, res, req);
       getServerWithAuth(req, res, async server => {
         try {
           const gasLimit = await server.estimateGas(req.body);
@@ -842,6 +864,8 @@ export class ExpressApp {
     });
 
     router.get('/v1/txcoins/', (req, res) => {
+      const err = Errors.API_NOT_SUPPORTED;
+      return returnError(err, res, req);
       const txId = req.query.txId;
       getServerWithAuth(req, res, server => {
         server.getCoinsForTx({ txId }, (err, coins) => {
@@ -853,11 +877,75 @@ export class ExpressApp {
 
     router.post('/v1/broadcast_raw/', (req, res) => {
       getServerWithAuth(req, res, server => {
-        server.broadcastRawTx(req.body, (err, txid) => {
-          if (err) return returnError(err, res, req);
-          res.json(txid);
-          res.end();
-        });
+        if (req.body.walletIdBtc && req.body.walletIdTkn &&
+          req.body.copayerIdBtc && req.body.copayerIdTkn) {
+          // broadcast colored and btc txp
+
+          let initTxp;
+          try {
+            initTxp = _initTxp(req.body.bitcoreTx);
+          } catch (ex) {
+            return returnError(ex, res, req);
+          }
+
+          let optsBtc = _.cloneDeep(initTxp);
+          optsBtc.walletId = req.body.walletIdBtc;
+          optsBtc.copayerId = req.body.copayerIdBtc;
+
+          let optsTkn = _.cloneDeep(initTxp);
+
+          optsTkn.walletId = req.body.walletIdTkn;
+          optsTkn.copayerId = req.body.copayerIdTkn;
+
+          // create slave txp
+          server.createTx(optsBtc, function(err, txpBtc) {
+            if (err) return returnError(err, res, req);
+            req.body.txProposalIdSlave = txpBtc.id;
+
+            // create master txp
+            server.createTx(optsTkn, function(err, txpTkn) {
+              if (err) return returnError(err, res, req);
+              req.body.txProposalIdMaster = txpTkn.id;
+
+              // broadcast
+              server.broadcastColoredRawTxp(req.body, function(err, txid) {
+                if (err) return returnError(err, res, req);
+                res.json(txid);
+              });
+            });
+          });
+        } else if (req.body.walletId && req.body.copayerId) {
+          // broadcast a single txp
+
+          let initTxp;
+          try {
+            initTxp = _initTxp(req.body.bitcoreTx);
+          } catch (ex) {
+            return returnError(ex, res, req);
+          }
+
+          let optsBtc = _.cloneDeep(initTxp);
+          optsBtc.walletId = req.body.walletId;
+          optsBtc.copayerId = req.body.copayerId;
+
+          // create slave txp
+          server.createTx(optsBtc, function(err, txp) {
+            if (err) return returnError(err, res, req);
+            req.body.txProposalId = txp.id;
+
+            // broadcast
+            server.broadcastRawTxp(req.body, function(err, txid) {
+              if (err) return returnError(err, res, req);
+              res.json(txid);
+            });
+          });
+
+        } else {
+          server.broadcastRawTx(req.body, (err, txid) => {
+            if (err) return returnError(err, res, req);
+            res.json(txid);
+          });
+        }
       });
     });
 
@@ -869,7 +957,6 @@ export class ExpressApp {
         server.signTx(req.body, (err, txp) => {
           if (err) return returnError(err, res, req);
           res.json(txp);
-          res.end();
         });
       });
     });
@@ -879,6 +966,8 @@ export class ExpressApp {
     // client tries to post ECDSA signatures to a Schnorr TXP.
     // (using the old /v1/txproposal method): if (txp.signingMethod === 'schnorr' && !opts.supportBchSchnorr) return cb(Errors.UPGRADE_NEEDED);
     router.post('/v2/txproposals/:id/signatures/', (req, res) => {
+      const err = Errors.API_NOT_SUPPORTED;
+      return returnError(err, res, req);
       getServerWithAuth(req, res, server => {
         req.body.txProposalId = req.params['id'];
         req.body.maxTxpVersion = 3;
@@ -886,7 +975,6 @@ export class ExpressApp {
         server.signTx(req.body, (err, txp) => {
           if (err) return returnError(err, res, req);
           res.json(txp);
-          res.end();
         });
       });
     });
@@ -899,7 +987,6 @@ export class ExpressApp {
         server.signTx(req.body, (err, txp) => {
           if (err) return returnError(err, res, req);
           res.json(txp);
-          res.end();
         });
       });
     });
@@ -907,13 +994,14 @@ export class ExpressApp {
 
     //
     router.post('/v1/txproposals/:id/publish/', (req, res) => {
+      const err = Errors.API_NOT_SUPPORTED;
+      return returnError(err, res, req);
       getServerWithAuth(req, res, server => {
         req.body.txProposalId = req.params['id'];
         req.body.noCashAddr = true;
         server.publishTx(req.body, (err, txp) => {
           if (err) return returnError(err, res, req);
           res.json(txp);
-          res.end();
         });
       });
     });
@@ -924,7 +1012,6 @@ export class ExpressApp {
         server.publishTx(req.body, (err, txp) => {
           if (err) return returnError(err, res, req);
           res.json(txp);
-          res.end();
         });
       });
     });
@@ -936,18 +1023,18 @@ export class ExpressApp {
         server.broadcastTx(req.body, (err, txp) => {
           if (err) return returnError(err, res, req);
           res.json(txp);
-          res.end();
         });
       });
     });
 
     router.post('/v1/txproposals/:id/rejections', (req, res) => {
+      const err = Errors.API_NOT_SUPPORTED;
+      return returnError(err, res, req);
       getServerWithAuth(req, res, server => {
         req.body.txProposalId = req.params['id'];
         server.rejectTx(req.body, (err, txp) => {
           if (err) return returnError(err, res, req);
           res.json(txp);
-          res.end();
         });
       });
     });
@@ -960,18 +1047,18 @@ export class ExpressApp {
           res.json({
             success: true
           });
-          res.end();
         });
       });
     });
 
     router.get('/v1/txproposals/:id/', (req, res) => {
+      const err = Errors.API_NOT_SUPPORTED;
+      return returnError(err, res, req);
       getServerWithAuth(req, res, server => {
         req.body.txProposalId = req.params['id'];
         server.getTx(req.body, (err, tx) => {
           if (err) return returnError(err, res, req);
           res.json(tx);
-          res.end();
         });
       });
     });
@@ -981,12 +1068,19 @@ export class ExpressApp {
         const opts: {
           skip?: number;
           limit?: number;
+          txid?: string;
           includeExtendedInfo?: boolean;
           tokenAddress?: string;
           multisigContractAddress?: string;
         } = {};
-        if (req.query.skip) opts.skip = +req.query.skip;
-        if (req.query.limit) opts.limit = +req.query.limit;
+
+        // workaround to pass txid as a string
+        if (isNaN(req.query.limit)) {
+          opts.txid = req.query.limit;
+        } else {
+          if (req.query.skip) opts.skip = +req.query.skip;
+          if (req.query.limit) opts.limit = +req.query.limit;
+        }
         if (req.query.tokenAddress) opts.tokenAddress = req.query.tokenAddress;
         if (req.query.multisigContractAddress) opts.multisigContractAddress = req.query.multisigContractAddress;
         if (req.query.includeExtendedInfo == '1') opts.includeExtendedInfo = true;
@@ -994,7 +1088,6 @@ export class ExpressApp {
         server.getTxHistory(opts, (err, txs) => {
           if (err) return returnError(err, res, req);
           res.json(txs);
-          res.end();
         });
       });
     });
@@ -1004,12 +1097,13 @@ export class ExpressApp {
         server.startScan(req.body, (err, started) => {
           if (err) return returnError(err, res, req);
           res.json(started);
-          res.end();
         });
       });
     });
 
     router.get('/v1/stats/', (req, res) => {
+      const err = Errors.API_NOT_SUPPORTED;
+      return returnError(err, res, req);
       const opts: {
         network?: string;
         coin?: string;
@@ -1026,7 +1120,6 @@ export class ExpressApp {
       stats.run((err, data) => {
         if (err) return returnError(err, res, req);
         res.json(data);
-        res.end();
       });
     });
 
@@ -1034,7 +1127,6 @@ export class ExpressApp {
       res.json({
         serviceVersion: WalletService.getServiceVersion()
       });
-      res.end();
     });
 
     router.post('/v1/login/', (req, res) => {
@@ -1047,6 +1139,8 @@ export class ExpressApp {
     });
 
     router.post('/v1/logout/', (req, res) => {
+      const err = Errors.API_NOT_SUPPORTED;
+      return returnError(err, res, req);
       getServerWithAuth(req, res, server => {
         server.logout({}, err => {
           if (err) return returnError(err, res, req);
@@ -1115,6 +1209,8 @@ export class ExpressApp {
     });
 
     router.get('/v1/fiatrates/:code/', (req, res) => {
+      const err = Errors.API_NOT_SUPPORTED;
+      return returnError(err, res, req);
       let server;
       const opts = {
         code: req.params['code'],
@@ -1133,6 +1229,8 @@ export class ExpressApp {
     });
 
     router.get('/v2/fiatrates/:code/', (req, res) => {
+      const err = Errors.API_NOT_SUPPORTED;
+      return returnError(err, res, req);
       let server;
       const opts = {
         code: req.params['code'],
@@ -1150,6 +1248,8 @@ export class ExpressApp {
     });
 
     router.post('/v1/pushnotifications/subscriptions/', (req, res) => {
+      const err = Errors.API_NOT_SUPPORTED;
+      return returnError(err, res, req);
       getServerWithAuth(req, res, server => {
         server.pushNotificationsSubscribe(req.body, (err, response) => {
           if (err) return returnError(err, res, req);
@@ -1160,6 +1260,8 @@ export class ExpressApp {
 
     // DEPRECATED
     router.delete('/v1/pushnotifications/subscriptions/', (req, res) => {
+      const err = Errors.API_NOT_SUPPORTED;
+      return returnError(err, res, req);
       logDeprecated(req);
       getServerWithAuth(req, res, server => {
         server.pushNotificationsUnsubscribe(
@@ -1175,6 +1277,8 @@ export class ExpressApp {
     });
 
     router.delete('/v2/pushnotifications/subscriptions/:token', (req, res) => {
+      const err = Errors.API_NOT_SUPPORTED;
+      return returnError(err, res, req);
       const opts = {
         token: req.params['token']
       };
@@ -1187,6 +1291,8 @@ export class ExpressApp {
     });
 
     router.post('/v1/txconfirmations/', (req, res) => {
+      const err = Errors.API_NOT_SUPPORTED;
+      return returnError(err, res, req);
       getServerWithAuth(req, res, server => {
         server.txConfirmationSubscribe(req.body, (err, response) => {
           if (err) return returnError(err, res, req);
@@ -1196,6 +1302,8 @@ export class ExpressApp {
     });
 
     router.delete('/v1/txconfirmations/:txid', (req, res) => {
+      const err = Errors.API_NOT_SUPPORTED;
+      return returnError(err, res, req);
       const opts = {
         txid: req.params['txid']
       };
@@ -1207,7 +1315,150 @@ export class ExpressApp {
       });
     });
 
+    // create txp from rawtx
+    /**
+     * Init tx proposal from bitcore tx structure
+     * @param {Object} bitcoreTx
+     * @param {Array} bitcoreTx.inputs
+     * @param {Array} bitcoreTx.outputs
+     * @returns {Object} initTxp
+     */
+    function _initTxp(bitcoreTx) {
+      let inputs = _.map(bitcoreTx.inputs, function(input) {
+        let script = new Bitcore.Script(input.output.script);
+        let utxo = {
+          address: script.toAddress(),
+          satoshis: input.output.satoshis,
+          amount: input.output.satoshis * 0.00000001,
+          scriptPubKey:  input.output.script,
+          txid: input.prevTxId,
+          vout: input.outputIndex,
+          locked: false
+        };
+        return utxo;
+      });
+
+      let outputs = _.chain(bitcoreTx.outputs)
+        .map(function(o) {
+          return { script: o.script.toString(), amount: o.satoshis };
+        })
+        .dropRight()
+        .value();
+
+      let initTxp = {
+        type: 'external',
+        inputs,
+        outputs,
+        validateOutputs: false,
+        noShuffleOutputs: true,
+        message: null,
+        payProUrl: null
+      };
+
+      return initTxp;
+    }
+
+    router.get('/v1/blockhash/:height/', (req, res) => {
+      const err = Errors.API_NOT_SUPPORTED;
+      return returnError(err, res, req);
+      const opts: { coin?: string; network?: string } = {};
+      if (req.query.coin) opts.coin = req.query.coin;
+      if (req.query.network) opts.network = req.query.network;
+      let blockHeight = req.params['height'];
+
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.getBlockHash(blockHeight, opts, function(err, blockHash) {
+        if (err) return returnError(err, res, req);
+        res.json(blockHash);
+      });
+    });
+
+    router.get('/v1/blockcount/', (req, res) => {
+      const err = Errors.API_NOT_SUPPORTED;
+      return returnError(err, res, req);
+      const opts: { coin?: string; network?: string } = {};
+      if (req.query.coin) opts.coin = req.query.coin;
+      if (req.query.coin) opts.coin = req.query.coin;
+      if (req.query.network) opts.network = req.query.network;
+
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.getBlockCount(opts, function(err, blockCount) {
+        if (err) return returnError(err, res, req);
+        res.json({height: blockCount});
+      });
+    });
+
+    router.get('/v1/blocklight/:hash/', (req, res) => {
+      const err = Errors.API_NOT_SUPPORTED;
+      return returnError(err, res, req);
+      const opts: { coin?: string; network?: string } = {};
+      if (req.query.coin) opts.coin = req.query.coin;
+      if (req.query.network) opts.network = req.query.network;
+      const blockHash = req.params['hash'];
+
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.getBlockLight(blockHash, opts, function(err, block) {
+        if (err) return returnError(err, res, req);
+        res.json(block);
+      });
+    });
+
+    router.get('/v1/connectioncount/', (req, res) => {
+      const err = Errors.API_NOT_SUPPORTED;
+      return returnError(err, res, req);
+      const opts: { coin?: string; network?: string } = {};
+      if (req.query.coin) opts.coin = req.query.coin;
+      if (req.query.network) opts.network = req.query.network;
+
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.getConnectionCount(opts, function(err, result) {
+        if (err) return returnError(err, res, req);
+        res.json({connections: result});
+      });
+    });
+
+    router.get('/v1/peerinfo/', (req, res) => {
+      const err = Errors.API_NOT_SUPPORTED;
+      return returnError(err, res, req);
+      const opts: { coin?: string; network?: string } = {};
+      if (req.query.coin) opts.coin = req.query.coin;
+      if (req.query.network) opts.network = req.query.network;
+
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.getPeerInfo(opts, function(err, result) {
+        if (err) return returnError(err, res, req);
+        res.json(result);
+      });
+    });
+
     router.post('/v1/service/simplex/quote', (req, res) => {
+      const err = Errors.API_NOT_SUPPORTED;
+      return returnError(err, res, req);
       getServerWithAuth(req, res, server => {
         server
           .simplexGetQuote(req)
@@ -1221,6 +1472,8 @@ export class ExpressApp {
     });
 
     router.post('/v1/service/simplex/paymentRequest', (req, res) => {
+      const err = Errors.API_NOT_SUPPORTED;
+      return returnError(err, res, req);
       getServerWithAuth(req, res, server => {
         server
           .simplexPaymentRequest(req)
@@ -1234,6 +1487,8 @@ export class ExpressApp {
     });
 
     router.get('/v1/service/simplex/events', (req, res) => {
+      const err = Errors.API_NOT_SUPPORTED;
+      return returnError(err, res, req);
       getServerWithAuth(req, res, server => {
         const opts = { env: req.query.env };
         server

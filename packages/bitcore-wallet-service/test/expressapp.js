@@ -8,7 +8,7 @@ var http = require('http');
 var should = chai.should();
 var proxyquire = require('proxyquire');
 var config = require('../ts_build/config.js');
-var log = require('npmlog');
+var logger = require('../ts_build/lib/logger');
 
 var Common = require('../ts_build/lib/common');
 var Defaults = Common.Defaults;
@@ -18,7 +18,7 @@ var { WalletService } = require('../ts_build/lib/server');
 
 describe('ExpressApp', function() {
   beforeEach(()=>{
-    log.level = 'error';
+    logger.level = 'error';
     config.disableLogs = true;
   });
   describe('#constructor', function() {
@@ -72,7 +72,7 @@ describe('ExpressApp', function() {
         httpServer.close();
       });
 
-      it('/v2/wallets', function(done) {
+      it('/v3/wallets', function(done) {
         var server = {
           getStatus: sinon.stub().callsArgWith(1, null, {}),
         };
@@ -87,7 +87,7 @@ describe('ExpressApp', function() {
         });
         start(TestExpressApp, function() {
           var requestOptions = {
-            url: testHost + ':' + testPort + config.basePath + '/v2/wallets',
+            url: testHost + ':' + testPort + config.basePath + '/v3/wallets',
             headers: {
               'x-identity': 'identity',
               'x-signature': 'signature'
@@ -137,7 +137,7 @@ describe('ExpressApp', function() {
       });
 
   
-      it('latest-copay-version', function(done) {
+      it.skip('latest-copay-version', function(done) {
 
           var htmlString = {
             "url": "https://api.github.com/repos/bitpay/copay/releases/21158137",
@@ -411,7 +411,7 @@ describe('ExpressApp', function() {
           start(TestExpressApp, function(err, data) {
             var requestOptions = {
               //test link, for either a 503 or 200 code response
-              url: testHost + ':' + testPort + config.basePath + "/v2/wallets",
+              url: testHost + ':' + testPort + config.basePath + "/v3/wallets",
               headers: {
                 'x-identity': 'identity',
                 'x-signature': 'signature'

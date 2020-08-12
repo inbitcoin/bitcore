@@ -3,6 +3,7 @@ import { ClientError } from './clienterror';
 
 const errors = {
   AD_ALREADY_EXISTS: 'Ad already exists',
+  API_NOT_SUPPORTED: 'API is not supported',
   BAD_SIGNATURES: 'Bad signatures',
   COPAYER_DATA_MISMATCH: 'Copayer data mismatch',
   COPAYER_IN_WALLET: 'Copayer already in wallet',
@@ -24,6 +25,7 @@ const errors = {
   MAIN_ADDRESS_GAP_REACHED: 'Maximum number of consecutive addresses without activity reached',
   NOT_AUTHORIZED: 'Not authorized',
   TOO_MANY_KEYS: 'Too many keys registered',
+  TOO_MANY_WALLETS: 'Too many wallets registered',
   TX_ALREADY_BROADCASTED: 'The transaction proposal is already broadcasted',
   TX_CANNOT_CREATE: 'Cannot create TX proposal during backoff time',
   TX_CANNOT_REMOVE: 'Cannot remove this tx proposal during locktime',

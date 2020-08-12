@@ -12,6 +12,7 @@ const Constants = Common.Constants;
 const Utils = Common.Utils;
 const Defaults = Common.Defaults;
 const Errors = require('../../errors/errordefinitions');
+logger.level = process.env.LOG_LEVEL || 'info';
 
 export class BtcChain implements IChain {
   protected feeSafetyMargin: number;
@@ -409,7 +410,8 @@ export class BtcChain implements IChain {
 
     try {
       const bitcoreTx = this.getBitcoreTx(txp);
-      bitcoreError = bitcoreTx.getSerializationError(serializationOpts);
+      if (!txp.disableAllCheck)
+        bitcoreError = bitcoreTx.getSerializationError(serializationOpts);
       if (!bitcoreError) {
         txp.fee = bitcoreTx.getFee();
       }

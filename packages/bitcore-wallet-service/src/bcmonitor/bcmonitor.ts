@@ -8,5 +8,6 @@ const bcm = new BlockchainMonitor();
 bcm.start(config, err => {
   if (err) throw err;
 
+  logger.level = process.env.LOG_LEVEL || 'verbose';
   logger.info('Blockchain monitor started');
 });

@@ -2,6 +2,8 @@
 import io from 'socket.io';
 import logger from '../lib/logger';
 
+logger.level = process.env.LOG_LEVEL || 'info';
+
 const DEFAULT_PORT = 3380;
 
 const opts = {

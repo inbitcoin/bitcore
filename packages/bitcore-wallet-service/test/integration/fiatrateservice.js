@@ -6,15 +6,16 @@ var async = require('async');
 var chai = require('chai');
 var sinon = require('sinon');
 var should = chai.should();
-var log = require('npmlog');
-log.debug = log.verbose;
-log.level = 'info';
+var logger = require('../../ts_build/lib/logger');
+logger.debug = logger.verbose;
+logger.level = 'info';
 
 var helpers = require('./helpers');
 
 var { FiatRateService } = require('../../ts_build/lib/fiatrateservice');
 
-describe('Fiat rate service', function() {
+// actually unuseful
+describe.skip('Fiat rate service', function() {
   var service, request;
 
   before(function(done) {

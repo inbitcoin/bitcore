@@ -6,8 +6,8 @@ var async = require('async');
 var chai = require('chai');
 var sinon = require('sinon');
 var should = chai.should();
-var log = require('npmlog');
-log.debug = log.verbose;
+var logger = require('../../ts_build/lib/logger');
+logger.debug = logger.verbose;
 
 var Bitcore = require('bitcore-lib');
 var Bitcore_ = {
@@ -31,7 +31,8 @@ var helpers = require('./helpers');
 var storage, blockchainExplorer, request;
 
 
-describe('Cash address migration', function() {
+// NO BCH
+describe.skip('Cash address migration', function() {
   before(function(done) {
     helpers.before(function(res) {
       storage = res.storage;
@@ -42,7 +43,7 @@ describe('Cash address migration', function() {
  
   });
   beforeEach(function(done) {
-    log.level = 'error';
+    logger.level = 'error';
     helpers.beforeEach(function(res) {
       done();
     });

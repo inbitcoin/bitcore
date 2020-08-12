@@ -6,8 +6,8 @@ var async = require('async');
 var chai = require('chai');
 var sinon = require('sinon');
 var should = chai.should();
-var log = require('npmlog');
-log.debug = log.verbose;
+var logger = require('../../ts_build/lib/logger');
+logger.debug = logger.verbose;
 
 var config = require('../test-config');
 // var tingodb = require('tingodb')({
@@ -66,7 +66,7 @@ helpers.before = function(cb) {
     be.addAddresses = sinon.stub().callsArgWith(2, null, null);
     be.getAddressUtxos = sinon.stub().callsArgWith(2, null, []);
     be.getCheckData = sinon.stub().callsArgWith(1, null, {sum: 100});
-    be.getUtxos = sinon.stub().callsArgWith(1, null,[]);
+    be.getUtxos = sinon.stub().callsArgWith(3, null, 'xpub', []);
     be.getBlockchainHeight = sinon.stub().callsArgWith(0, null, 1000, 'hash');
     be.estimateGas = sinon.stub().callsArgWith(1, null, Defaults.MIN_GAS_LIMIT);
     be.getBalance = sinon.stub().callsArgWith(1, null, {unconfirmed:0, confirmed: '10000000000', balance: '10000000000' });
@@ -120,6 +120,16 @@ helpers.beforeEach = function(cb) {
     var opts = {
       storage: storage,
       blockchainExplorer: blockchainExplorer,
+      createWalletLimit: 0,
+      blockchainExplorerOpts: {
+        btc: {
+          livenet: {
+            url: 'http://address/',
+            apiPrefix: '/api/',
+            regtestEnabled: false
+          },
+        },
+      },
       request: sinon.stub()
     };
     WalletService.initialize(opts, function() {
@@ -420,10 +430,12 @@ helpers.stubUtxos = function(server, wallet, amounts, opts, cb) {
           txid: helpers.randomTXID(),
           vout: _.random(0, 10),
           satoshis: parsed.amount,
+          amount: parsed.amount / 1e8,
           scriptPubKey: scriptPubKey.toBuffer().toString('hex'),
           address: address.address,
           confirmations: parsed.confirmations,
           publicKeys: address.publicKeys,
+          fullPath: "m/44'/0'/0'/0/0",
           wallet: wallet.id,
         };
       }));
@@ -434,7 +446,7 @@ helpers.stubUtxos = function(server, wallet, amounts, opts, cb) {
         helpers._utxos = utxos;
       }
 
-      blockchainExplorer.getUtxos = function(param1, height, cb) {
+      blockchainExplorer.getUtxos = function(param1, height, xPubKey, cb) {
 
         var selected;
         selected = _.filter(helpers._utxos, {'wallet': param1.id});
@@ -462,8 +474,9 @@ helpers.stubBroadcast = function(txid) {
   blockchainExplorer.getTransaction = sinon.stub().callsArgWith(1, null, null);
 };
 
-helpers.createTxsV8 = function(nr, bcHeight, txs) {
-  txs = txs || [];
+helpers.createTxsV8 = function(nr, bcHeight, data) {
+  let transactions = data || [];
+  let txs = {transactions};
   // Will generate
   // order / confirmations  / height / txid
   //  0.  => -1     / -1            /   txid0   / id0  <=  LAST ONE!
@@ -472,19 +485,51 @@ helpers.createTxsV8 = function(nr, bcHeight, txs) {
   //  3.  => 3...   / bcHeight - 2  /   txid3
 
   var  i = 0;
-  if (_.isEmpty(txs)) {
+  if (_.isEmpty(txs.transactions)) {
     while(i < nr) {
-      txs.push({
-        id: 'id' + i,
+      txs.transactions.push({
         txid: 'txid' + i,
-        size: 226,
-        category: 'receive',
-        satoshis: 30001,
-        // this is translated on V8.prototype.getTransactions
-        amount: 30001 /1e8,
-        height: (i == 0) ? -1 :  bcHeight - i + 1,
-        address: 'muFJi3ZPfR5nhxyD7dfpx2nYZA8Wmwzgck',
-        blockTime: '2018-09-21T18:08:31.000Z',
+        vout: [
+          {
+            "value": "89757",
+            "n": 0,
+            "spent": true,
+            "hex": "76a914ee3fbb8a39b4a85c40eea9fa287e3a017307451788ac",
+            "addresses": [
+              "1L3z9LPd861FWQhf3vDn89Fnc9dkdBo2CG"
+            ],
+            "isAddress": true
+          },
+          {
+            "value": "10000",
+            "n": 1,
+            "hex": "76a91481ce4457e54dddd44ba2b6ca16d4783fafdbb27688ac",
+            "addresses": [
+              "13EhTvi2X8tW877Q4PtGmVMwBBMBBRfQPJ"
+            ],
+            "isAddress": true
+          }
+        ],
+        vin: [
+          {
+            "txid": "8f94f82dd54997d4c9d107577edc023178110abf1c4249ce8caee656ae05533c",
+            "sequence": 4294967295,
+            "n": 0,
+            "addresses": [
+              "1h7qXzsy8TAfTNLVgjKP82NyZyiqjoeXMM"
+            ],
+            "isAddress": true,
+            "value": "100000",
+            "hex": "483045022100e22b4fb83be08d2fddad8a9a4125cbeb21f3fafed85b9d88b933c9d9b25c7ec3022008152a23cd9ad54e55a6e0f979024e825167054f7ae060b6582f29d637a7114a012102de15096c21a30331dd905ea39105d29315d10ad5c00ee9cbacadfae026561948"
+          }
+        ],
+        blockHash: "00000000000000af4418aa7069d3841711ba5871543c69a959153403ad4fa0e1",
+        blockHeight: (i == 0) ? -1 :  bcHeight - i + 1,
+        blockTime: 1585843242 + i,
+        confirmations: i,
+        value: "99757",
+        valueIn: "100000",
+        fees: "243",
       });
       i++;
     }
@@ -496,12 +541,14 @@ helpers.createTxsV8 = function(nr, bcHeight, txs) {
 
 helpers.stubHistory = function(nr, bcHeight, txs) {
   txs= helpers.createTxsV8(nr,bcHeight, txs);
-  blockchainExplorer.getTransactions = function(walletId, startBlock, cb) {
+  blockchainExplorer.getTransactions = function(walletId, xPubKey_param, startBlock, cb) {
     startBlock = startBlock || 0;
-    var page = _.filter(txs, (x) => {
-      return x.height >=startBlock || x.height == -1
+    var page = _.filter(txs.transactions, (x) => {
+      return x.blockHeight >=startBlock || x.blockHeight == -1
     });
-    return cb(null, page);
+    var list = {transactions: []}
+    list.transactions = page;
+    return cb(null, list);
   };
 };
 

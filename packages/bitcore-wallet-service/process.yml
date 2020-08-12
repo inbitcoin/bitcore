@@ -1,0 +1,12 @@
+apps:
+  - script   : ts_build/messagebroker/messagebroker.js
+    instances: 1
+  - script   : ts_build/bcmonitor/bcmonitor.js
+    instances: 1
+#  - script   : ts_build/pushnotificationsservice/pushnotificationsservice.js
+#    instances: 1
+  - script   : ts_build/fiatrateservice/fiatrateservice.js
+    instances: 1
+  - script   : ts_build/bws.js
+    instances: 1
+

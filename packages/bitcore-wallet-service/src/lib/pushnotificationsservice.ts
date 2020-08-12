@@ -17,6 +17,8 @@ const Defaults = require('./common/defaults');
 const Constants = require('./common/constants');
 const sjcl = require('sjcl');
 
+logger.level = process.env.LOG_LEVEL || 'info';
+
 const PUSHNOTIFICATIONS_TYPES = {
   NewCopayer: {
     filename: 'new_copayer'
@@ -451,7 +453,7 @@ export class PushNotificationsService {
         json: true,
         headers: {
           'Content-Type': 'application/json',
-          Authorization: 'key=' + this.authorizationKey
+          'Authorization': 'key=' + this.authorizationKey
         },
         body: opts
       },

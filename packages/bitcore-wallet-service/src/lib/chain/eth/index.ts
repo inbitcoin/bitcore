@@ -10,6 +10,8 @@ const Constants = Common.Constants;
 const Defaults = Common.Defaults;
 const Errors = require('../../errors/errordefinitions');
 
+logger.level = process.env.LOG_LEVEL || 'info';
+
 export class EthChain implements IChain {
   /**
    * Converts Bitcore Balance Response.

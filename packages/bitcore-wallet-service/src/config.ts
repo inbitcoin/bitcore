@@ -21,7 +21,7 @@ module.exports = {
 
   storageOpts: {
     mongoDb: {
-      uri: 'mongodb://localhost:27017/bws',
+      uri: 'mongodb://mongodb:27017/bws',
       dbname: 'bws'
     }
   },
@@ -33,36 +33,10 @@ module.exports = {
   },
   blockchainExplorerOpts: {
     btc: {
-      livenet: {
-        url: 'https://api.bitcore.io'
-      },
       testnet: {
-        url: 'https://api.bitcore.io',
+        url: 'http://testnet.blockbook.inbitcoin.it:9130',
+        apiPrefix: '/api/',
         regtestEnabled: false
-      }
-    },
-    bch: {
-      livenet: {
-        url: 'https://api.bitcore.io'
-      },
-      testnet: {
-        url: 'https://api.bitcore.io'
-      }
-    },
-    eth: {
-      livenet: {
-        url: 'https://api-eth.bitcore.io'
-      },
-      testnet: {
-        url: 'https://api-eth.bitcore.io'
-      }
-    },
-    xrp: {
-      livenet: {
-        url: 'https://api-xrp.bitcore.io'
-      },
-      testnet: {
-        url: 'https://api-xrp.bitcore.io'
       }
     },
     socketApiKey: 'socketApiKey'

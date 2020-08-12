@@ -5,6 +5,7 @@ import * as mongodb from 'mongodb';
 import logger from './logger';
 
 const config = require('../config');
+logger.level = process.env.LOG_LEVEL || 'info';
 
 const INITIAL_DATE = '2015-01-01';
 

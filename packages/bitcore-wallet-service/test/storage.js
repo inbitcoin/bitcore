@@ -296,10 +296,10 @@ describe('Storage', function() {
 
     it('should store a 100 txs on the cache and update status correctly', (done) => {
       let tipIndex = 80; // current cache tip
-      let items = helpers.createTxsV8(101, 1000);
+      let items = helpers.createTxsV8(101, 1000).transactions;
 
-      // this is done by _normalizeV8TxHistory
-      _.each(items, (x) => { x.blockheight = x.height; });
+      // this is done by _getResultTx
+      _.each(items, (x) => { x.blockheight = x.blockHeight; });
 
       // remove unconfirmed
       items.shift();

@@ -5,7 +5,24 @@ import logger from './lib/logger';
 
 import { ExpressApp } from './lib/expressapp';
 
-const config = require('./config');
+var config = require('./config');
+logger.level = process.env.LOG_LEVEL || 'info';
+
+// remove any extra slashes in url and apiPrefix
+for (var coin in config.blockchainExplorerOpts) {
+  for (var network in config.blockchainExplorerOpts[coin]) {
+    if (config.blockchainExplorerOpts[coin] &&
+        config.blockchainExplorerOpts[coin][network]) {
+      if (config.blockchainExplorerOpts[coin][network].url)
+        config.blockchainExplorerOpts[coin][network].url =
+          config.blockchainExplorerOpts[coin][network].url.replace(/\/+$/, '');
+      if (config.blockchainExplorerOpts[coin][network].apiPrefix)
+        config.blockchainExplorerOpts[coin][network].apiPrefix =
+          config.blockchainExplorerOpts[coin][network].apiPrefix.replace(/(^\/+|\/+$)/g, '');
+    }
+  }
+}
+
 const port = process.env.BWS_PORT || config.port || 3232;
 const cluster = require('cluster');
 const serverModule = config.https ? require('https') : require('http');

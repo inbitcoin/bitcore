@@ -1,17 +1,26 @@
-*debug.log
-node_modules/
-.env
-*bitcore.config.*
-.vscode
-.DS_Store
-*.swp
+**/*.log
+**/node_modules
+/.env
+/*bitcore.config.*
+/.vscode
+/.DS_Store
+**/ts_build
+/bitcore-lib.js
 
-# VIM ignore
-[._]*.s[a-w][a-z]
-[._]s[a-w][a-z]
-*.un~
-Session.vim
-.netrwhist
-*~
-ts_build
-bitcore-lib.js
+# IDEs data
+**/*.swp
+**/*.swo
+/Session*.vim
+/.netrwhist
+**/*~
+/.idea
+
+# tests data
+/tests/secret
+/tests/load/reports
+/tests/load/sync
+/tests/load/wallets
+/tests/integration/secret
+/tests/integration/reports
+/tests/integration/sync
+/tests/integration/wallets
