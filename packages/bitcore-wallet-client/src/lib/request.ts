@@ -188,59 +188,6 @@ export class Request {
     return this.doRequest('get', url, {}, false, cb);
   }
 
-  getWithLogin(url, cb) {
-    url += url.indexOf('?') > 0 ? '&' : '?';
-    url += 'r=' + _.random(10000, 99999);
-    return this.doRequestWithLogin('get', url, {}, cb);
-  }
-
-  _login(cb) {
-    this.post('/v1/login', {}, cb);
-  }
-
-  logout(cb) {
-    this.post('/v1/logout', {}, cb);
-  }
-
-  //  Do an HTTP request
-  //  @private
-  //
-  //  @param {Object} method
-  //  @param {String} url
-  //  @param {Object} args
-  //  @param {Callback} cb
-  doRequestWithLogin(method, url, args, cb) {
-    async.waterfall(
-      [
-        next => {
-          if (this.session) return next();
-          this.doLogin(next);
-        },
-        next => {
-          this.doRequest(method, url, args, true, (err, body, header) => {
-            if (err && err instanceof Errors.NOT_AUTHORIZED) {
-              this.doLogin(err => {
-                if (err) return next(err);
-                return this.doRequest(method, url, args, true, next);
-              });
-            }
-            next(null, body, header);
-          });
-        }
-      ],
-      cb
-    );
-  }
-
-  doLogin(cb) {
-    this._login((err, s) => {
-      if (err) return cb(err);
-      if (!s) return cb(new Errors.NOT_AUTHORIZED());
-      this.session = s;
-      cb();
-    });
-  }
-
   // Do a DELETE request
   // @private
   //

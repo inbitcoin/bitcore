@@ -21,7 +21,6 @@
 
 * `/v1/addresses/scan/`
 * `/v1/broadcast_raw/`
-* `/v1/login/`
 * `/v1/txproposals/:id/broadcast/`
 * `/v1/txproposals/:id/signatures/`
 * `/v2/txproposals/:id/publish/`
@@ -196,8 +195,6 @@ Optional Arguments:
 
 ### `/v1/broadcast_raw/` (inbitcoin): Broadcasts a raw tx on the specified network
 
-### `/v1/login/`: Obtain a valid session token
-
 ### `/v1/txproposals/:id/broadcast/`: Broadcast a transaction proposal
 
 Returns:
@@ -274,6 +271,8 @@ Returns:
 - Address object: (/packages/bitcore-wallet-service/src/lib/model/address.ts). Note that `path` is returned so client can derive the address independently and check server's response.
 
 ## disabled POST Endpoints
+
+### `/v1/login/`: Obtain a valid session token
 
 ### `/v1/txproposals/:id/rejections`: Reject a transaction proposal
 Returns:

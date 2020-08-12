@@ -1130,6 +1130,8 @@ export class ExpressApp {
     });
 
     router.post('/v1/login/', (req, res) => {
+      const err = Errors.API_NOT_SUPPORTED;
+      return returnError(err, res, req);
       getServerWithAuth(req, res, server => {
         server.login({}, (err, session) => {
           if (err) return returnError(err, res, req);

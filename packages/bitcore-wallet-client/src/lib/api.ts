@@ -106,7 +106,6 @@ export class API extends EventEmitter {
 
   dispose(cb) {
     this._disposeNotifications();
-    this.request.logout(cb);
   }
 
   _fetchLatestNotifications(interval, cb) {
@@ -1072,7 +1071,7 @@ export class API extends EventEmitter {
       url += '?timeSpan=' + opts.timeSpan;
     }
 
-    this.request.getWithLogin(url, (err, result) => {
+    this.request.get(url, (err, result) => {
       if (err) return cb(err);
 
       var notifications = _.filter(result, notification => {

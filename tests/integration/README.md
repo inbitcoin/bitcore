@@ -41,7 +41,6 @@ Wallet report and services logs will be saved in `./reports`.
 
 - `/v1/addresses/scan/`
 - `/v1/broadcast_raw/`
-- `/v1/login/`
 - `/v1/txproposals/:id/broadcast/`
 - `/v1/txproposals/:id/signatures/`
 - `/v2/txproposals/:id/publish/`
